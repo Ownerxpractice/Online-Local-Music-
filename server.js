@@ -3,25 +3,26 @@ const path = require("path");
 
 const app = express();
 
-// Middleware
+// middleware
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public")); // serves CSS, images, assets
+app.use(express.static("public")); 
 
-// Set view engine
+// set view engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Routes
+// routes
 const pagesRoute = require("./routes/pages");
 app.use("/", pagesRoute);
 
-// Health check
+// health check
 app.get("/test", (req, res) => {
   res.send("Server is running ✔️");
 });
 
-// Start server
+// start server
 const PORT = 3000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
