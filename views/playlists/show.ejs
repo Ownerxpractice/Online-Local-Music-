@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= playlist.name %> - Playlist</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/navbar'); %>
+
+  <main class="container">
+    <h1>Playlist: <%= playlist.name %></h1>
+
+    <section id="player-section">
+      <h2 id="current-track-title">No track selected</h2>
+      <audio id="audio-player" controls></audio>
+    </section>
+
+    <table class="songs-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>City</th>
+          <th>Avg Rating</th>
+          <th>Play</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody>
+      <% songs.forEach(song => { %>
+        <tr>
+          <td><%= song.title %></td>
+          <td><%= song.city %></td>
+          <td><%= song.avg_rating %></td>
+          <td>
+            <button class="play-btn"
+                    data-src="<%= song.file_path %>"
+                    data-title="<%= song.title %>">
+              Play
+            </button>
+          </td>
+          <td>
+            <form action="/playlists/<%= playlist.id %>/remove-song" method="post">
+              <input type="hidden" name="song_id" value="<%= song.id %>">
+              <button type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </main>
+
+  <script src="/js/player.js"></script>
+</body>
+</html>

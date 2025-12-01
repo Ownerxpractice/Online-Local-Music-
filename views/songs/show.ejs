@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= song.title %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/navbar'); %>
+
+  <main class="container">
+    <h1><%= song.title %></h1>
+    <p><strong>City:</strong> <%= song.city %></p>
+    <p><strong>Average Rating:</strong> <%= song.avg_rating %></p>
+
+    <section id="player-section">
+      <h2 id="current-track-title">Now playing: <%= song.title %></h2>
+      <audio id="audio-player" src="<%= song.file_path %>" controls></audio>
+    </section>
+
+    <form action="/songs/<%= song.id %>/rate" method="post">
+      <label>Rate this song:</label>
+      <select name="rating">
+        <option value="1">1★</option>
+        <option value="2">2★</option>
+        <option value="3">3★</option>
+        <option value="4">4★</option>
+        <option value="5">5★</option>
+      </select>
+      <button type="submit">Submit Rating</button>
+    </form>
+  </main>
+
+  <script src="/js/player.js"></script>
+</body>
+</html>

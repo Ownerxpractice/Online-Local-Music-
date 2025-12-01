@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>All Songs</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/navbar'); %>
+
+  <main class="container">
+    <h1>All Songs</h1>
+
+    <a href="/songs/new">Upload New Song</a>
+
+    <table class="songs-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>City</th>
+          <th>Avg Rating</th>
+          <th>Player</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      <% songs.forEach(song => { %>
+        <tr>
+          <td><a href="/songs/<%= song.id %>"><%= song.title %></a></td>
+          <td><%= song.city %></td>
+          <td><%= song.avg_rating %></td>
+          <td>
+            <button class="play-btn"
+                    data-src="<%= song.file_path %>"
+                    data-title="<%= song.title %>">
+              Play
+            </button>
+            <a href="<%= song.file_path %>" download>Download</a>
+          </td>
+          <td>
+            <form action="/songs/<%= song.id %>/edit" method="get" style="display:inline;">
+              <button type="submit">Edit</button>
+            </form>
+
+            <form action="/songs/<%= song.id %>/delete" method="post" style="display:inline;">
+              <button type="submit">Delete</button>
+            </form>
+
+            <form action="/songs/<%= song.id %>/rate" method="post" style="display:inline;">
+              <select name="rating">
+                <option value="1">1★</option>
+                <option value="2">2★</option>
+                <option value="3" selected>3★</option>
+                <option value="4">4★</option>
+                <option value="5">5★</option>
+              </select>
+              <button type="submit">Rate</button>
+            </form>
+
+            <!-- Optional: add-to-playlist (needs playlist_id selection UI later) -->
+          </td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+
+    <section id="player-section">
+      <h2 id="current-track-title">No track selected</h2>
+      <audio id="audio-player" controls></audio>
+    </section>
+  </main>
+
+  <script src="/js/player.js"></script>
+</body>
+</html>
