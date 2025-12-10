@@ -10,17 +10,16 @@
   <main class="container">
     <h1>Upload Song</h1>
 
-    <!-- Simple version: use path to a file inside /public/uploads, e.g. /uploads/test.mp3 -->
-
-    <form action="/songs" method="post">
+    <!-- Real upload form: sends audio file to /songs -->
+    <form action="/songs" method="post" enctype="multipart/form-data">
       <label>Title</label>
       <input type="text" name="title" required>
 
       <label>City</label>
-      <input type="text" name="city" required>
+      <input type="text" name="city" value="Flagstaff" required>
 
-      <label>File Path (e.g. /uploads/song.mp3)</label>
-      <input type="text" name="file_path" required>
+      <label>Audio File</label>
+      <input type="file" name="audio" accept="audio/*" required>
 
       <button type="submit">Save</button>
     </form>

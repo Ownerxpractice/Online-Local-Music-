@@ -1,3 +1,4 @@
+// public/js/player.js
 document.addEventListener("DOMContentLoaded", () => {
   const audio = document.getElementById("audio-player");
   const titleEl = document.getElementById("current-track-title");

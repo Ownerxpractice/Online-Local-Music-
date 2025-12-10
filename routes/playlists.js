@@ -4,11 +4,18 @@ const db = require("../db");
 
 const router = express.Router();
 
+function requireLogin(req, res, next) {
+  if (!req.user) {
+    return res.redirect("/login");
+  }
+  next();
+}
+
 /**
  * GET /playlists
  * Show all playlists for current user.
  */
-router.get("/", async (req, res, next) => {
+router.get("/", requireLogin, async (req, res, next) => {
   try {
     const [rows] = await db.query(
       "SELECT * FROM playlists WHERE user_id = ? ORDER BY id DESC",
@@ -28,7 +35,7 @@ router.get("/", async (req, res, next) => {
  * POST /playlists
  * Create a playlist.
  */
-router.post("/", async (req, res, next) => {
+router.post("/", requireLogin, async (req, res, next) => {
   const { name } = req.body;
 
   try {
@@ -45,7 +52,7 @@ router.post("/", async (req, res, next) => {
 /**
  * POST /playlists/:id/delete
  */
-router.post("/:id/delete", async (req, res, next) => {
+router.post("/:id/delete", requireLogin, async (req, res, next) => {
   try {
     await db.query(
       "DELETE FROM playlists WHERE id = ? AND user_id = ?",
@@ -61,7 +68,7 @@ router.post("/:id/delete", async (req, res, next) => {
  * GET /playlists/:id
  * Show playlist with songs.
  */
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requireLogin, async (req, res, next) => {
   try {
     const [plistRows] = await db.query(
       "SELECT * FROM playlists WHERE id = ? AND user_id = ?",
@@ -98,12 +105,12 @@ router.get("/:id", async (req, res, next) => {
 
 /**
  * POST /playlists/:id/add-song
+ * Add song to a specific playlist (used on playlist page).
  */
-router.post("/:id/add-song", async (req, res, next) => {
+router.post("/:id/add-song", requireLogin, async (req, res, next) => {
   const { song_id } = req.body;
 
   try {
-    // PK (playlist_id, song_id) so duplicates are automatically blocked
     await db.query(
       "INSERT IGNORE INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)",
       [req.params.id, song_id]
@@ -115,9 +122,27 @@ router.post("/:id/add-song", async (req, res, next) => {
 });
 
 /**
+ * POST /playlists/add-song
+ * Add song to a playlist (used from Songs page dropdown).
+ */
+router.post("/add-song", requireLogin, async (req, res, next) => {
+  const { playlist_id, song_id } = req.body;
+
+  try {
+    await db.query(
+      "INSERT IGNORE INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)",
+      [playlist_id, song_id]
+    );
+    res.redirect("/songs");
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /playlists/:id/remove-song
  */
-router.post("/:id/remove-song", async (req, res, next) => {
+router.post("/:id/remove-song", requireLogin, async (req, res, next) => {
   const { song_id } = req.body;
 
   try {

@@ -10,6 +10,20 @@
   <main class="container">
     <h1>All Songs</h1>
 
+    <!-- City search form -->
+    <form action="/songs" method="get" class="city-search">
+      <label>Search by City:</label>
+      <input
+        type="text"
+        name="city"
+        value="<%= selectedCity || '' %>"
+        placeholder="Enter city (e.g., Flagstaff)"
+      >
+      <button type="submit">Search</button>
+    </form>
+
+    <br>
+
     <a href="/songs/new">Upload New Song</a>
 
     <table class="songs-table">
@@ -56,7 +70,17 @@
               <button type="submit">Rate</button>
             </form>
 
-            <!-- Optional: add-to-playlist (needs playlist_id selection UI later) -->
+            <% if (user && playlists && playlists.length > 0) { %>
+              <form action="/playlists/add-song" method="post" style="display:inline;">
+                <input type="hidden" name="song_id" value="<%= song.id %>">
+                <select name="playlist_id">
+                  <% playlists.forEach(pl => { %>
+                    <option value="<%= pl.id %>"><%= pl.name %></option>
+                  <% }); %>
+                </select>
+                <button type="submit">Add to Playlist</button>
+              </form>
+            <% } %>
           </td>
         </tr>
       <% }); %>

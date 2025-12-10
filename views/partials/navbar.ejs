@@ -3,13 +3,23 @@
   <div class="nav-left">
     <a href="/">Home</a>
     <a href="/songs">Songs</a>
-    <a href="/songs/new">Upload Song</a>
-    <a href="/playlists">Playlists</a>
+
+    <% if (user) { %>
+      <a href="/songs/new">Upload Song</a>
+      <a href="/playlists">Playlists</a>
+    <% } %>
   </div>
 
-  <!-- Right side: auth links (keeps Phase-1 login/signup visible) -->
+  <!-- Right side: auth / user info -->
   <div class="nav-right">
-    <a href="/login">Login</a>
-    <a href="/signup">Sign Up</a>
+    <% if (user) { %>
+      <span>Logged in as <%= user.name %></span>
+      <form action="/logout" method="post" style="display:inline;">
+        <button type="submit">Logout</button>
+      </form>
+    <% } else { %>
+      <a href="/login">Login</a>
+      <a href="/signup">Sign Up</a>
+    <% } %>
   </div>
 </nav>

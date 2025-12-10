@@ -1,20 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Local Music Platform</title>
+  <title>Online Local Music</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <%- include("partials/navbar") %>
 
-<%- include("partials/navbar") %>
+  <main class="container">
+    <h1>Online Local Music</h1>
+    <p>Discover and share local music by city.</p>
 
+    <!-- City search -->
+    <section>
+      <h2>Search songs by city</h2>
+      <form action="/songs" method="get" class="city-search">
+        <label>City:</label>
+        <input
+          type="text"
+          name="city"
+          placeholder="Flagstaff"
+        >
+        <button type="submit">Search</button>
+      </form>
+    </section>
 
-  <div class="container">
-    <h1>Welcome to the Local Music Platform</h1>
-    <p>Discover music from artists in your city.</p>
-
-    <input type="text" placeholder="Search by city..." class="search-box">
-  </div>
-
+    <section style="margin-top: 2rem;">
+      <h2>Browse all songs</h2>
+      <a href="/songs">View all songs</a>
+    </section>
+  </main>
 </body>
 </html>

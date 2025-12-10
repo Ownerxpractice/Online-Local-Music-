@@ -3,27 +3,74 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const db = require("../db");
+const multer = require("multer");
 
 const router = express.Router();
 
+// Require login for certain routes
+function requireLogin(req, res, next) {
+  if (!req.user) {
+    return res.redirect("/login");
+  }
+  next();
+}
+
+// Configure multer for audio uploads
+const upload = multer({
+  dest: path.join(__dirname, "..", "public", "uploads"),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("audio/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only audio files are allowed."));
+    }
+  },
+});
+
 /**
  * GET /songs
- * List all songs with average rating.
+ * List songs, optionally filtered by city.
+ * Also loads user's playlists (if logged in) so we can add songs to playlists.
  */
 router.get("/", async (req, res, next) => {
   try {
-    const [rows] = await db.query(
-      `SELECT s.*,
-              COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating
-       FROM songs s
-       LEFT JOIN ratings r ON s.id = r.song_id
-       GROUP BY s.id
-       ORDER BY s.created_at DESC`
-    );
+    const rawCity = req.query.city || "";
+    const city = rawCity.trim();
+
+    let query = `
+      SELECT s.*,
+             COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating
+      FROM songs s
+      LEFT JOIN ratings r ON s.id = r.song_id
+    `;
+    const params = [];
+
+    if (city) {
+      // match anywhere in the city string
+      query += " WHERE s.city LIKE ? ";
+      params.push("%" + city + "%");
+    }
+
+    query += " GROUP BY s.id ORDER BY s.created_at DESC";
+
+    const [songsRows] = await db.query(query, params);
+
+    // If logged in, load their playlists
+    let playlists = [];
+    if (req.user) {
+      const [plistRows] = await db.query(
+        "SELECT * FROM playlists WHERE user_id = ? ORDER BY id DESC",
+        [req.user.id]
+      );
+      playlists = plistRows;
+    }
 
     res.render("songs/index", {
       user: req.user,
-      songs: rows,
+      songs: songsRows,
+      selectedCity: rawCity,
+      playlists,
     });
   } catch (err) {
     next(err);
@@ -32,36 +79,48 @@ router.get("/", async (req, res, next) => {
 
 /**
  * GET /songs/new
- * Show simple “upload” form (we just store file_path text).
+ * Show upload form (requires login).
  */
-router.get("/new", (req, res) => {
+router.get("/new", requireLogin, (req, res) => {
   res.render("songs/new", { user: req.user });
 });
 
 /**
  * POST /songs
- * Insert a new song row.
+ * Upload a new song (audio file + title + city).
  */
-router.post("/", async (req, res, next) => {
-  const { title, city, file_path } = req.body;
+router.post(
+  "/",
+  requireLogin,
+  upload.single("audio"),
+  async (req, res, next) => {
+    const { title, city } = req.body;
 
-  try {
-    await db.query(
-      `INSERT INTO songs (title, city, file_path, user_id)
-       VALUES (?, ?, ?, ?)`,
-      [title, city, file_path, req.user.id]
-    );
-    res.redirect("/songs");
-  } catch (err) {
-    next(err);
+    if (!req.file) {
+      return res.redirect("/songs/new");
+    }
+
+    // Public URL path for the file
+    const file_path = "/uploads/" + req.file.filename;
+
+    try {
+      await db.query(
+        `INSERT INTO songs (title, city, file_path, user_id)
+         VALUES (?, ?, ?, ?)`,
+        [title, city, file_path, req.user.id]
+      );
+      res.redirect("/songs");
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 /**
  * GET /songs/:id/edit
  * Edit song title/city.
  */
-router.get("/:id/edit", async (req, res, next) => {
+router.get("/:id/edit", requireLogin, async (req, res, next) => {
   try {
     const [rows] = await db.query(
       "SELECT * FROM songs WHERE id = ?",
@@ -84,7 +143,7 @@ router.get("/:id/edit", async (req, res, next) => {
 /**
  * POST /songs/:id/edit
  */
-router.post("/:id/edit", async (req, res, next) => {
+router.post("/:id/edit", requireLogin, async (req, res, next) => {
   const { title, city } = req.body;
 
   try {
@@ -103,7 +162,7 @@ router.post("/:id/edit", async (req, res, next) => {
 /**
  * POST /songs/:id/delete
  */
-router.post("/:id/delete", async (req, res, next) => {
+router.post("/:id/delete", requireLogin, async (req, res, next) => {
   try {
     const [rows] = await db.query(
       "SELECT * FROM songs WHERE id = ?",
@@ -129,10 +188,8 @@ router.post("/:id/delete", async (req, res, next) => {
 
 /**
  * POST /songs/:id/rate
- * Upsert rating (because your ratings table does NOT have a unique constraint
- * on (user_id, song_id), we’ll manual “upsert”).
  */
-router.post("/:id/rate", async (req, res, next) => {
+router.post("/:id/rate", requireLogin, async (req, res, next) => {
   const rating = parseInt(req.body.rating, 10);
 
   if (isNaN(rating) || rating < 1 || rating > 5) {
